@@ -1,3 +1,3 @@
-module github.com/hihozhou/wechat
+module gitlab.xjr2018.com/craftsmanX/plugin/wechat
 
 go 1.12
