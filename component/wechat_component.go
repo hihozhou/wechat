@@ -1,10 +1,9 @@
 package component
 
 import (
-	"fmt"
-	"github.com/hihozhou/wechat/cache"
+	"encoding/json"
+	"errors"
 	"github.com/hihozhou/wechat/http"
-	"time"
 )
 
 const VerifyTicketCacheKeyPrefix = "wechat:component:verify_ticket:"
@@ -40,37 +39,17 @@ func New(appId, appSecret, token, encodingAESKey string) (*WechatComponent) {
 	}
 }
 
-// 获取微信开放平台账号对应的component_verify_ticket的缓存key
-// author : hihozhou
-func (wc *WechatComponent) GetVerifyTicketCacheKey() (string) {
-	return VerifyTicketCacheKeyPrefix + wc.AppId
-}
-
-// 设置component_verify_ticket
-func (wc *WechatComponent) SetVerifyTicketCache(ticket string) {
-	h, _ := time.ParseDuration("1h")
-	cache.Set(wc.GetVerifyTicketCacheKey(), ticket, h)
-}
-
-// 获取component_verify_ticket
-func (wc *WechatComponent) GetVerifyTicket() (string, bool) {
-	ticket, exist := cache.Get(wc.GetVerifyTicketCacheKey())
-	if (exist) {
-		return ticket.(string), exist
-	}
-	return "", exist
+// 获取component_access_token返回数据
+type ComponentAccessTokenData struct {
+	ComponentAccessToken string `xml:"component_access_token" json:"component_access_token"`
+	ExpiresIn            string `xml:"expires_in" json:"expires_in"`
 }
 
 // 获取令牌component_access_token
 // author:hihozhou
+// param componentVerifyTicket
 // 文档https://developers.weixin.qq.com/doc/oplatform/Third-party_Platforms/api/component_access_token.html
-func (wc *WechatComponent) GetAccessToken() {
-	//http client
-	//http 请求
-	ticket, exist := wc.GetVerifyTicket()
-	if !exist {
-		//返回错误
-	}
+func (wc *WechatComponent) GetAccessToken(componentVerifyTicket string) (data *ComponentAccessTokenData, err error) {
 	postData := struct {
 		Component_appid         string `json:"component_appid"`
 		Component_appsecret     string `json:"component_appsecret"`
@@ -78,14 +57,21 @@ func (wc *WechatComponent) GetAccessToken() {
 	}{
 		Component_appid:         wc.AppId,
 		Component_appsecret:     wc.AppSecret,
-		Component_verify_ticket: ticket,
+		Component_verify_ticket: componentVerifyTicket,
 	}
 	result := http.Post(apiComponentTokenUrl, postData, "application/json")
-	fmt.Println(result)
-
-	//返回结果
-	//储存token
-	//appId := "wxdc4e3ad21308ea2a"
-	//appSecret := "3eb6c01e7a49fc64a79c12057420e6c1"
+	apiErr := &ApiError{}
+	err = json.Unmarshal([]byte(result), apiErr)
+	if err != nil {
+		return nil, err
+	}
+	if apiErr.isError() {
+		return nil, errors.New(apiErr.Error())
+	}
+	err = json.Unmarshal([]byte(result), data)
+	if (err != nil) {
+		return nil, err
+	}
+	return data, nil
 
 }

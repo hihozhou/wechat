@@ -15,3 +15,4 @@ type ComponentVerifyTicketData struct {
 	InfoType              string `xml:"InfoType"`              //固定为："component_verify_ticket"
 	ComponentVerifyTicket string `xml:"ComponentVerifyTicket"` //Ticket 内容
 }
+

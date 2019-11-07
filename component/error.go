@@ -1,4 +1,4 @@
-package wechat
+package component
 
 import (
 	"fmt"
