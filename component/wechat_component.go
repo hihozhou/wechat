@@ -42,7 +42,7 @@ func New(appId, appSecret, token, encodingAESKey string) (*WechatComponent) {
 // 获取component_access_token返回数据
 type ComponentAccessTokenData struct {
 	ComponentAccessToken string `xml:"component_access_token" json:"component_access_token"`
-	ExpiresIn            string `xml:"expires_in" json:"expires_in"`
+	ExpiresIn            int64 `xml:"expires_in" json:"expires_in"`
 }
 
 // 获取令牌component_access_token

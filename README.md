@@ -15,3 +15,9 @@
 ### 依赖库
 
 - [go-redis](https://github.com/go-redis/redis)，redis操作
+
+
+## feature
+
+- debug模式和release模式
+- debug模式控制台直接输出请求日志，结果
