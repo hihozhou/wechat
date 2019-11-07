@@ -60,15 +60,17 @@ func (wc *WechatComponent) GetAccessToken(componentVerifyTicket string) (data *C
 		Component_verify_ticket: componentVerifyTicket,
 	}
 	result := http.Post(apiComponentTokenUrl, postData, "application/json")
+	resultByte := []byte(result);
 	apiErr := &ApiError{}
-	err = json.Unmarshal([]byte(result), apiErr)
+	err = json.Unmarshal(resultByte, apiErr)
 	if err != nil {
 		return nil, err
 	}
 	if apiErr.isError() {
 		return nil, errors.New(apiErr.Error())
 	}
-	err = json.Unmarshal([]byte(result), data)
+	data = &ComponentAccessTokenData{}
+	err = json.Unmarshal(resultByte, data)
 	if (err != nil) {
 		return nil, err
 	}
