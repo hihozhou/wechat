@@ -48,12 +48,12 @@ func (decryptor Decryptor) Decrypt(text string) (decryptData []byte, appId strin
 
 	deciphered, err := base64.StdEncoding.DecodeString(text)
 	if err != nil {
-		return nil, "", err
+		return decryptData, "", err
 	}
 
 	c, err := aes.NewCipher(decryptor.key)
 	if err != nil {
-		return nil, "", err
+		return decryptData, "", err
 	}
 
 	cbc := cipher.NewCBCDecrypter(c, decryptor.iv)
