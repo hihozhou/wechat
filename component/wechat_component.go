@@ -112,10 +112,9 @@ func (wc *WechatComponent) GetAccessToken() (accessToken string, err error) {
 		Component_verify_ticket: componentVerifyTicket,
 	}
 
-	requestUrl := fmt.Sprintf(apiComponentTokenUrl, accessToken)
 	data := &ComponentAccessTokenData{}
 
-	err = wc.attempt(requestUrl, postData, data)
+	err = wc.attempt(apiComponentTokenUrl, postData, data)
 	if err != nil {
 		return "", err
 	}
