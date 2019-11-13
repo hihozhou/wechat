@@ -146,11 +146,11 @@ func (wc *WechatComponent) GetComponentPreAuthCode() (data *PreAuthCodeData, err
 	}
 
 	postData := struct {
-		Component_appid string `json:"component_appid"`
+		ComponentAppId string `json:"component_appid"`
 	}{
-		Component_appid: wc.AppId,
+		ComponentAppId: wc.AppId,
 	}
-	requestUrl := fmt.Sprintf(apiCreatePreAuthCodeUrl, accessToken)
+	requestUrl := fmt.Sprintf(apiQueryAuthUrl, accessToken)
 
 	resultByte, err := http.Post(requestUrl, postData, "application/json")
 	if err != nil {
@@ -185,4 +185,55 @@ func (wc *WechatComponent) GetComponentOauthUrl(redirectUri string, authType int
 	//拼接url
 	result := fmt.Sprintf(oauthUrl, wc.AppId, code.PreAuthCode, url.QueryEscape(redirectUri), authType)
 	return result, nil
+}
+
+//================================================使用授权码获取授权信息=============================================================
+
+// 使用授权码获取授权信息
+type AuthorizationInfo struct {
+	AuthorizerAppid        string `xml:"authorizer_appid" json:"authorizer_appid"`               //授权方 appid
+	AuthorizerAccessToken  string `xml:"authorizer_access_token" json:"authorizer_access_token"` //接口调用令牌（在授权的公众号/小程序具备 API 权限时，才有此返回值）
+	ExpiresIn              int64  `xml:"expires_in" json:"expires_in"`                           //authorizer_access_token 的有效期（在授权的公众号/小程序具备API权限时，才有此返回值），单位：秒
+	AuthorizerRefreshToken string `xml:"expires_in" json:"authorizer_refresh_token"`             //刷新令牌（在授权的公众号具备API权限时，才有此返回值），
+	// 刷新令牌主要用于第三方平台获取和刷新已授权用户的 authorizer_access_token。一旦丢失，只能让用户重新授权，才能再次拿到新的刷新令牌。用户重新授权后，之前的刷新令牌会失效
+}
+
+type funcInfo struct {
+}
+
+// 使用授权码获取授权信息
+func (wc *WechatComponent) GetComponentApiQueryAuth(authorizationCode string) (authorizationInfo *AuthorizationInfo, err error) {
+
+	accessToken, err := wc.GetAccessToken()
+	if err != nil {
+		return nil, err
+	}
+
+	postData := struct {
+		ComponentAppId    string `json:"component_appid"`
+		AuthorizationCode string `json:"authorization_code"`
+	}{
+		ComponentAppId:    wc.AppId,
+		AuthorizationCode: authorizationCode,
+	}
+	requestUrl := fmt.Sprintf(apiCreatePreAuthCodeUrl, accessToken)
+
+	resultByte, err := http.Post(requestUrl, postData, "application/json")
+	if err != nil {
+		return nil, err
+	}
+	apiErr := &ApiError{}
+	err = json.Unmarshal(resultByte, apiErr)
+	if err != nil {
+		return nil, err
+	}
+	if apiErr.isError() {
+		return nil, errors.New(apiErr.Error())
+	}
+	authorizationInfo = &AuthorizationInfo{}
+	err = json.Unmarshal(resultByte, authorizationInfo)
+	if (err != nil) {
+		return nil, err
+	}
+	return authorizationInfo, nil
 }
