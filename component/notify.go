@@ -25,7 +25,7 @@ type ComponentVerifyTicketData struct {
 //回调验证
 //todo 直接传入request
 //todo error整理
-func (wc *WechatComponent) NotifyValid(componentNotifyData *ComponentNotifyData, timestamp, nonce, signature string) (data *ComponentVerifyTicketData, err error) {
+func (wc *WechatComponent) NotifyValid(componentNotifyData *ComponentNotifyData, timestamp, nonce, signature string) (*ComponentVerifyTicketData, error) {
 	//验证签名
 	if crypto.Signature(wc.Token, timestamp, nonce) != signature {
 		return nil, errors.New("请求签名signature验证错误")
