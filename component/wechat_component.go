@@ -123,6 +123,7 @@ func (wc *WechatComponent) GetAccessToken() (accessToken string, err error) {
 	if (err != nil) {
 		return "", err
 	}
+	wc.SetAccessTokenCache(data.ComponentAccessToken)
 	//缓存token
 	return data.ComponentAccessToken, nil
 
