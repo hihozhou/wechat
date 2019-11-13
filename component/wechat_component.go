@@ -103,24 +103,12 @@ func (wc *WechatComponent) GetAccessToken() (accessToken string, err error) {
 		Component_appsecret:     wc.AppSecret,
 		Component_verify_ticket: componentVerifyTicket,
 	}
-	//请求接口
-	resultByte, err := http.Post(apiComponentTokenUrl, postData, "application/json")
-	if err != nil {
-		return "", err
-	}
-	//判断请求接口返回数据是否错误
-	apiErr := &ApiError{}
-	err = json.Unmarshal(resultByte, apiErr)
-	if err != nil {
-		return "", err
-	}
-	if apiErr.isError() {
-		return "", errors.New(apiErr.Error())
-	}
-	//解析正常数据
+
+	requestUrl := fmt.Sprintf(apiComponentTokenUrl, accessToken)
 	data := &ComponentAccessTokenData{}
-	err = json.Unmarshal(resultByte, data)
-	if (err != nil) {
+
+	err = wc.attempt(requestUrl, postData, data)
+	if err != nil {
 		return "", err
 	}
 	wc.SetAccessTokenCache(data.ComponentAccessToken)
@@ -138,6 +126,8 @@ type PreAuthCodeData struct {
 }
 
 // 获取预授权码pre_auth_code
+// author hihozhou
+// 微信文档：https://developers.weixin.qq.com/doc/oplatform/Third-party_Platforms/api/pre_auth_code.html
 func (wc *WechatComponent) GetComponentPreAuthCode() (data *PreAuthCodeData, err error) {
 
 	accessToken, err := wc.GetAccessToken()
@@ -150,23 +140,11 @@ func (wc *WechatComponent) GetComponentPreAuthCode() (data *PreAuthCodeData, err
 	}{
 		ComponentAppId: wc.AppId,
 	}
-	requestUrl := fmt.Sprintf(apiQueryAuthUrl, accessToken)
-
-	resultByte, err := http.Post(requestUrl, postData, "application/json")
-	if err != nil {
-		return nil, err
-	}
-	apiErr := &ApiError{}
-	err = json.Unmarshal(resultByte, apiErr)
-	if err != nil {
-		return nil, err
-	}
-	if apiErr.isError() {
-		return nil, errors.New(apiErr.Error())
-	}
+	requestUrl := fmt.Sprintf(apiCreatePreAuthCodeUrl, accessToken)
 	data = &PreAuthCodeData{}
-	err = json.Unmarshal(resultByte, data)
-	if (err != nil) {
+
+	err = wc.attempt(requestUrl, postData, data)
+	if err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -209,31 +187,40 @@ func (wc *WechatComponent) GetComponentApiQueryAuth(authorizationCode string) (a
 		return nil, err
 	}
 
-	postData := struct {
+	postData := &struct {
 		ComponentAppId    string `json:"component_appid"`
 		AuthorizationCode string `json:"authorization_code"`
 	}{
 		ComponentAppId:    wc.AppId,
 		AuthorizationCode: authorizationCode,
 	}
-	requestUrl := fmt.Sprintf(apiCreatePreAuthCodeUrl, accessToken)
-
-	resultByte, err := http.Post(requestUrl, postData, "application/json")
+	requestUrl := fmt.Sprintf(apiQueryAuthUrl, accessToken)
+	authorizationInfo = &AuthorizationInfo{}
+	err = wc.attempt(requestUrl, postData, authorizationInfo)
 	if err != nil {
 		return nil, err
+	}
+	return authorizationInfo, nil
+
+}
+
+//请求方法
+func (wc *WechatComponent) attempt(requestUrl string, params interface{}, result interface{}) error {
+	resultByte, err := http.Post(requestUrl, params, "application/json")
+	if err != nil {
+		return err
 	}
 	apiErr := &ApiError{}
 	err = json.Unmarshal(resultByte, apiErr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if apiErr.isError() {
-		return nil, errors.New(apiErr.Error())
+		return errors.New(apiErr.Error())
 	}
-	authorizationInfo = &AuthorizationInfo{}
-	err = json.Unmarshal(resultByte, authorizationInfo)
+	err = json.Unmarshal(resultByte, result)
 	if (err != nil) {
-		return nil, err
+		return err
 	}
-	return authorizationInfo, nil
+	return nil
 }
