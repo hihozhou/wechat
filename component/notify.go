@@ -27,7 +27,7 @@ type ComponentVerifyTicketData struct {
 //todo error整理
 func (wc *WechatComponent) NotifyValid(componentNotifyData *ComponentNotifyData, timestamp, nonce, signature string) (data *ComponentVerifyTicketData, err error) {
 	//验证签名
-	if crypto.Signature(wc.Token, timestamp, nonce) == signature {
+	if crypto.Signature(wc.Token, timestamp, nonce) != signature {
 		return nil, errors.New("请求签名signature验证错误")
 	}
 	//获取
@@ -49,13 +49,13 @@ func (wc *WechatComponent) NotifyValid(componentNotifyData *ComponentNotifyData,
 	}
 
 	//解密数据绑定到struct
-	var componentVerifyTicketData *ComponentVerifyTicketData
-	err = xml.Unmarshal(msgDecrypt, componentVerifyTicketData)
+	var componentVerifyTicketData ComponentVerifyTicketData
+	err = xml.Unmarshal(msgDecrypt, &componentVerifyTicketData)
 	if (err != nil) {
 		return nil, errors.New("绑定解密后数据失败，err：" + err.Error())
 	}
 	//缓存ticket
 
-	return componentVerifyTicketData, nil
+	return &componentVerifyTicketData, nil
 
 }
