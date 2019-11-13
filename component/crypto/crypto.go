@@ -4,12 +4,8 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
-	"io"
-	"sort"
 )
 
 // MessageCrypter 封装了生成签名和消息加解密的方法
@@ -70,21 +66,4 @@ func (decryptor Decryptor) Decrypt(text string) (decryptData []byte, appId strin
 	appId = string(decoded[20+msgLen:])
 
 	return decryptData, appId, nil
-}
-
-//Signature sha1签名
-func Signature(params ...string) string {
-
-	sort.Strings(params)
-
-	h := sha1.New()
-	for _, s := range params {
-		io.WriteString(h, s)
-	}
-	return fmt.Sprintf("%x", h.Sum(nil))
-}
-
-// 请求验证
-func RequestSignature(token, timestamp, nonce, signature string) bool {
-	return Signature(token, timestamp, nonce) == signature
 }

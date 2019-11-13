@@ -34,7 +34,7 @@ func Get(url string) string {
 // 发送POST请求
 // url:请求地址，data:POST请求提交的数据,contentType:请求体格式，如：application/json
 // content:请求放回的内容
-func Post(url string, data interface{}, contentType string) string {
+func Post(url string, data interface{}, contentType string) ([]byte, error) {
 	jsonStr, _ := json.Marshal(data)
 	req, err := http.NewRequest(`POST`, url, bytes.NewBuffer(jsonStr))
 	if err != nil {
@@ -50,6 +50,6 @@ func Post(url string, data interface{}, contentType string) string {
 	}
 	defer resp.Body.Close()
 
-	result, _ := ioutil.ReadAll(resp.Body)
-	return string(result)
+	result, err := ioutil.ReadAll(resp.Body)
+	return result, err
 }
