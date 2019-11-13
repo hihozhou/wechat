@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v7"
 	"github.com/hihozhou/wechat/http"
+	"github.com/hihozhou/wechat/util"
 	"net/url"
 	"time"
 )
@@ -32,8 +33,15 @@ type WechatComponent struct {
 	Token          string        //token
 	EncodingAESKey string        //aesKey
 	RedisClient    *redis.Client //redis客户端，用于缓存component_verify_ticket和component_access_token
+	debugMode      bool          //是否开启debug模式
 	//componentVerifyTicket string        //内存缓存的component_verify_ticket
 	//componentAccessToken  string		//内存缓存的component_access_token
+}
+
+//是指是否是debug模式
+func (wc *WechatComponent) DebugMode(enable bool) *WechatComponent {
+	wc.debugMode = enable
+	return wc
 }
 
 // 获取微信开放平台账号对应的component_verify_ticket的缓存key
@@ -206,21 +214,41 @@ func (wc *WechatComponent) GetComponentApiQueryAuth(authorizationCode string) (a
 
 //请求方法
 func (wc *WechatComponent) attempt(requestUrl string, params interface{}, result interface{}) error {
+	if wc.debugMode {
+		fmt.Println("请求微信接口，url : " + requestUrl)
+		fmt.Println("参数 : " + util.GetObjFormatStr(params))
+	}
+
 	resultByte, err := http.Post(requestUrl, params, "application/json")
 	if err != nil {
+		if wc.debugMode {
+			fmt.Println("请求接口失败，接口请求错误，err : " + err.Error())
+		}
 		return err
 	}
 	apiErr := &ApiError{}
 	err = json.Unmarshal(resultByte, apiErr)
 	if err != nil {
+		if wc.debugMode {
+			fmt.Println("解析数据错误1，接口请求返回错误，err : " + err.Error())
+		}
 		return err
 	}
 	if apiErr.isError() {
+		if wc.debugMode {
+			fmt.Println("请求接口失败，接口请求返回错误，err : " + apiErr.Error())
+		}
 		return errors.New(apiErr.Error())
 	}
 	err = json.Unmarshal(resultByte, result)
 	if (err != nil) {
+		if wc.debugMode {
+			fmt.Println("解析数据错误2，err : " + err.Error())
+		}
 		return err
+	}
+	if wc.debugMode {
+		fmt.Println("接口调用成功，返回结果 : " + util.GetObjFormatStr(result))
 	}
 	return nil
 }
